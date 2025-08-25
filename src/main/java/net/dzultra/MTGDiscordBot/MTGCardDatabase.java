@@ -12,10 +12,10 @@ public class MTGCardDatabase {
     protected static final ObjectMapper mapper = new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT);
 
-    private static final String resourcePath = "src/main/resources/cards";
+    private static final String resourcePath = "src/main/data/cards";
 
     protected static void saveCard(MTGCard card) throws IOException {
-        File dir = new File("src/main/resources/cards");
+        File dir = new File("src/main/data/cards");
         if (!dir.exists()) {
             dir.mkdirs();
         }
