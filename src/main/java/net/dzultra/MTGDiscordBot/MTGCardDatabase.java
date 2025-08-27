@@ -9,12 +9,12 @@ import java.io.IOException;
 import java.util.List;
 
 public class MTGCardDatabase {
-    protected static final ObjectMapper mapper = new ObjectMapper()
+    public static final ObjectMapper mapper = new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT);
 
     private static final String resourcePath = "src/main/data/cards";
 
-    protected static void saveCard(MTGCard card) throws IOException {
+    public static void saveCard(MTGCard card) throws IOException {
         File dir = new File("src/main/data/cards");
         if (!dir.exists()) {
             dir.mkdirs();
@@ -23,13 +23,13 @@ public class MTGCardDatabase {
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         writer.writeValue(file, card);
     }
-    protected static void saveAllCards(List<MTGCard> cards) throws IOException {
+    public static void saveAllCards(List<MTGCard> cards) throws IOException {
         for (MTGCard card : cards) {
             saveCard(card);
         }
     }
 
-    protected static void removeCard(String cardName, int removeCount) throws IOException {
+    public static void removeCard(String cardName, int removeCount) throws IOException {
         File cardFile = new File(resourcePath, cardName + ".json");
         if (!cardFile.exists()) {
             return; // card file not found
