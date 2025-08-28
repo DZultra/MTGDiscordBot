@@ -1,82 +1,67 @@
 package net.dzultra.MTGDiscordBot.commands;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
-import discord4j.core.object.command.ApplicationCommandOption;
+import discord4j.core.object.command.ApplicationCommandInteractionOption;
+import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.discordjson.json.ApplicationCommandOptionData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
 import discord4j.rest.util.Color;
-import net.dzultra.MTGDiscordBot.MTGCard;
-import net.dzultra.MTGDiscordBot.MTGCardDatabase;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
-import java.time.Instant;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class GetCardCommand {
+    private static final ObjectMapper mapper = new ObjectMapper();
+
     public static Mono<Void> getCardCommand(ChatInputInteractionEvent event) {
-        MTGCard card;
-        String card_name = event.getOptionAsString("name").get();
-
         try {
-            card = MTGCardDatabase.getCard(card_name);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+            // --- Get options ---
+            String name = event.getOption("name")
+                    .flatMap(ApplicationCommandInteractionOption::getValue)
+                    .map(ApplicationCommandInteractionOptionValue::asString)
+                    .orElseThrow(() -> new IllegalArgumentException("❌ Missing Option: name"));
 
-        if (card == null) {
-            return event.reply("No card with this name has been found!\nPlease try a different name.")
-                    .withEphemeral(true);
-        } else {
-            String iconURL = "";
-            if (card.color.equalsIgnoreCase("green")) {
-                iconURL = "https://i.imgur.com/qmg2p1y.png";
-            } else if (card.color.equalsIgnoreCase("red")) {
-                iconURL = "https://i.imgur.com/scLqjsL.png";
-            } else if (card.color.equalsIgnoreCase("white")) {
-                iconURL = "https://i.imgur.com/rpfiHz0.png";
-            } else if (card.color.equalsIgnoreCase("black")) {
-                iconURL = "https://i.imgur.com/xxBLewo.png";
-            } else if (card.color.equalsIgnoreCase("blue")) {
-                iconURL = "https://i.imgur.com/2FxwJs8.png";
+            Path cardPath = Path.of("src/main/cards/" + name + ".json");
+
+            if (!Files.exists(cardPath)) {
+                return event.reply("❌ Card `" + name + "` not found in database.").withEphemeral(true).then();
+            }
+
+            // --- Read JSON file ---
+            JsonNode root = mapper.readTree(Files.readString(cardPath));
+            String cardName = root.get("name").asText();
+            String imageUrl = root.get("image_link").asText();
+            int count = root.get("count").asInt();
+            String folder = root.get("folder").asText();
+            int page = root.get("page").asInt();
+
+            EmbedCreateSpec.Builder embed = EmbedCreateSpec.builder()
+                    .title(cardName)
+                    .addField("Folder", folder, true)
+                    .addField("Page", String.valueOf(page), true)
+                    .image(imageUrl)
+                    .color(Color.GRAY);
+
+            if (count == 1) {
+                embed.description("You own **" + count + "** copy of this card.");
             } else {
-                iconURL = null;
+                embed.description("You own **" + count + "** copies of this card.");
             }
 
-            EmbedCreateSpec.Builder embedBuilder = EmbedCreateSpec.builder()
-                    .color(
-                            card.color.equalsIgnoreCase("green") ? Color.GREEN :
-                                    card.color.equalsIgnoreCase("red") ? Color.RED :
-                                            card.color.equalsIgnoreCase("white") ? Color.WHITE :
-                                                    card.color.equalsIgnoreCase("black") ? Color.DARK_GRAY :
-                                                            card.color.equalsIgnoreCase("blue") ? Color.BLUE :
-                                                                    Color.DARK_GOLDENROD
-                    )
-                    .author(card.name, null, iconURL)
-                    .title(card.type + " · " + card.color.substring(0, 1).toUpperCase() + card.color.substring(1))
-                    .description("**" + card.folder + "**  \nPage: **" + card.page + "**")
-                    .addField("Count", String.valueOf(card.count), true)
-                    .addField("Attack", card.attack >= 0 ? String.valueOf(card.attack) : "—", true)
-                    .addField("Defense", card.defense >= 0 ? String.valueOf(card.defense) : "—", true)
-                    .addField("Classes", (card.cardClass != null && !card.cardClass.isEmpty())
-                            ? String.join(", ", card.cardClass)
-                            : "*None*", false)
-                    .addField("Mana Cost",
-                            String.format(
-                                    "Green: %d | Red: %d | White: %d | Black: %d | Blue: %d | Neutral: %d",
-                                    card.green_cost, card.red_cost, card.white_cost, card.black_cost, card.blue_cost, card.neutral_cost
-                            ),
-                            false)
-                    .timestamp(Instant.now())
-                    .footer("Magic The Gathering", "https://i.imgur.com/SEh8aKw.png");
+            // --- Send feedback embed ---
+            return event.reply()
+                    .withEmbeds(embed.build())
+                    .withEphemeral(true)
+                    .then();
 
-            if (card.loyalty > 0) {
-                embedBuilder.addField("Loyality", String.valueOf(card.loyalty), true);
-            }
-
-            EmbedCreateSpec embed = embedBuilder.build();
-
-            return event.reply().withEmbeds(embed).withEphemeral(true);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return event.reply("❌ Error while trying to get card: " + e.getMessage())
+                    .withEphemeral(true).then();
         }
     }
 
@@ -87,9 +72,9 @@ public class GetCardCommand {
                 .addOption(ApplicationCommandOptionData.builder()
                         .name("name")
                         .description("Name of the Card")
-                        .type(ApplicationCommandOption.Type.STRING.getValue())
+                        .type(3) // String
                         .required(true)
-                        .build()
-                ).build();
+                        .build())
+                .build();
     }
 }
