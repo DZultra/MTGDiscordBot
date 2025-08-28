@@ -9,6 +9,7 @@ import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.discordjson.json.ApplicationCommandOptionData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
 import discord4j.rest.util.Color;
+import net.dzultra.MTGDiscordBot.DataHandler;
 import reactor.core.publisher.Mono;
 
 import java.nio.file.Files;
@@ -20,12 +21,17 @@ public class GetCardCommand {
     public static Mono<Void> getCardCommand(ChatInputInteractionEvent event) {
         try {
             // --- Get options ---
-            String name = event.getOption("name")
+            String name = DataHandler.formatName(event.getOption("name")
                     .flatMap(ApplicationCommandInteractionOption::getValue)
                     .map(ApplicationCommandInteractionOptionValue::asString)
-                    .orElseThrow(() -> new IllegalArgumentException("❌ Missing Option: name"));
+                    .orElseThrow(() -> new IllegalArgumentException("❌ Missing Option: name")));
 
-            Path cardPath = Path.of("src/main/cards/" + name + ".json");
+            if (!DataHandler.isNameValid(name)) {
+                return event.reply("❌ Invalid characters in name. Avoid using: <>:\"/\\|?* and control characters.")
+                        .withEphemeral(true).then();
+            }
+
+            Path cardPath = DataHandler.getCardPath(name.toLowerCase());
 
             if (!Files.exists(cardPath)) {
                 return event.reply("❌ Card `" + name + "` not found in database.").withEphemeral(true).then();

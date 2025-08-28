@@ -10,9 +10,8 @@ import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.discordjson.json.ApplicationCommandOptionData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
 import discord4j.rest.util.Color;
+import net.dzultra.MTGDiscordBot.DataHandler;
 import net.dzultra.MTGDiscordBot.Main;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
@@ -24,20 +23,19 @@ import java.nio.file.Path;
 
 public class AddCardCommand {
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final Logger log = LoggerFactory.getLogger(AddCardCommand.class);
 
     public static Mono<Void> addCardCommand(ChatInputInteractionEvent event) {
         try {
             // --- Get options ---
-            String name = event.getOption("name")
+            String name = DataHandler.formatName(event.getOption("name")
                     .flatMap(ApplicationCommandInteractionOption::getValue)
                     .map(ApplicationCommandInteractionOptionValue::asString)
-                    .orElseThrow(() -> new IllegalArgumentException("❌ Missing Option: name"));
+                    .orElseThrow(() -> new IllegalArgumentException("❌ Missing Option: name")));
 
-            String folder = event.getOption("folder")
+            String folder = DataHandler.formatName(event.getOption("folder")
                     .flatMap(ApplicationCommandInteractionOption::getValue)
                     .map(ApplicationCommandInteractionOptionValue::asString)
-                    .orElseThrow(() -> new IllegalArgumentException("❌ Missing Option: folder"));
+                    .orElseThrow(() -> new IllegalArgumentException("❌ Missing Option: folder")));
 
             int page = event.getOption("page")
                     .flatMap(ApplicationCommandInteractionOption::getValue)
@@ -50,6 +48,11 @@ public class AddCardCommand {
                     .map(ApplicationCommandInteractionOptionValue::asLong)
                     .map(Math::toIntExact)
                     .orElse(1);
+            // -------------------
+            if (!DataHandler.isNameValid(name)) {
+                return event.reply("❌ Invalid characters in name. Avoid using: <>:\"/\\|?* and control characters.")
+                        .withEphemeral(true).then();
+            }
 
             if (countToAdd <= 0) {
                 return event.reply("❌ Count must be greater than 0.").withEphemeral(true).then();
@@ -59,7 +62,7 @@ public class AddCardCommand {
                 return event.reply("❌ Page must be greater than 0.").withEphemeral(true).then();
             }
 
-            Path cardPath = Path.of("src/main/cards/" + name + ".json");
+            Path cardPath = DataHandler.getCardPath(name.toLowerCase());
 
             if (Files.exists(cardPath)) {
                 // --- Update existing file ---
@@ -93,9 +96,10 @@ public class AddCardCommand {
                     }
 
                     String imageUrl = apiData.get("image_uris").get("border_crop").asText();
+                    String officialName = apiData.get("printed_name").asText();
 
                     ObjectNode newCard = mapper.createObjectNode();
-                    newCard.put("name", name);
+                    newCard.put("name", officialName);
                     newCard.put("image_link", imageUrl);
                     newCard.put("count", countToAdd);
                     newCard.put("folder", folder);

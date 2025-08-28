@@ -1,5 +1,14 @@
 plugins {
     id 'java'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'net.dzultra.MTGDiscordBot.Main'
+        )
+    }
 }
 
 group = 'net.dzultra'
@@ -18,8 +27,6 @@ dependencies {
 
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.0'
     implementation 'com.discord4j:discord4j-core:3.2.8'
-    implementation 'com.github.sarxos:webcam-capture:0.3.12'
-    implementation 'net.sourceforge.tess4j:tess4j:5.4.0'
     implementation 'org.slf4j:slf4j-simple:2.0.16'
 }
 

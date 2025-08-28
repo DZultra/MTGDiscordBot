@@ -13,8 +13,6 @@ import net.dzultra.MTGDiscordBot.commands.RemoveCardCommand;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -22,7 +20,7 @@ public class Main {
     public static Logger logger = Logger.getLogger("[MTGDiscordBot]");
 
     public static void main(String[] args) throws IOException {
-        DiscordClient client = DiscordClient.create(Files.readString(Path.of("src/main/resources/assets/token")));
+        DiscordClient client = DiscordClient.create(DataHandler.getToken());
         long guildId = 1129737425653071992L;
         long applicationId;
 
