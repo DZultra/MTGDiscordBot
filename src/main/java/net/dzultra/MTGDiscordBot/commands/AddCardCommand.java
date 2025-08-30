@@ -128,7 +128,7 @@ public class AddCardCommand {
                             .color(Color.GRAY)
                             .build();
 
-                    return event.reply("✅ Added new card: **" + name + "**\n**Count:** " + countToAdd + "x")
+                    return event.reply("✅ Added new card: **" + officialName + "**\n**Count:** " + countToAdd + "x")
                             .withEmbeds(embed)
                             .withEphemeral(true);
                 } catch (Exception e) {
