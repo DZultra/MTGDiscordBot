@@ -95,8 +95,19 @@ public class AddCardCommand {
                                 .withEphemeral(true);
                     }
 
-                    String imageUrl = apiData.get("image_uris").get("border_crop").asText();
-                    String officialName = apiData.get("printed_name").asText();
+                    String officialName;
+                    try {
+                        officialName = apiData.get("printed_name").asText();
+                    } catch (Exception e1) {
+                        officialName = apiData.get("name").asText();
+                    }
+
+                    String imageUrl;
+                    try {
+                        imageUrl = apiData.get("image_uris").get("border_crop").asText();
+                    } catch (Exception e2) {
+                        imageUrl = apiData.get("card_faces").get(0).get("image_uris").get("border_crop").asText();
+                    }
 
                     ObjectNode newCard = mapper.createObjectNode();
                     newCard.put("name", officialName);
