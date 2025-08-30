@@ -68,10 +68,14 @@ public class AddCardCommand {
                 // --- Update existing file ---
                 JsonNode root = mapper.readTree(Files.readString(cardPath));
                 int currentCount = root.get("count").asInt();
+                String actual_folder = root.get("folder").asText();
+                int actual_page = root.get("page").asInt();
                 ((ObjectNode) root).put("count", currentCount + countToAdd);
                 Files.writeString(cardPath, mapper.writerWithDefaultPrettyPrinter().writeValueAsString(root));
 
-                return event.reply("✅ Updated **" + name + "** count to **" + (currentCount + countToAdd) + "**")
+                return event.reply(
+                        "✅ Updated **" + name + "** count to **" + (currentCount + countToAdd) + "**." +
+                                "\nCopies of this card are in folder **" + actual_folder + "** on page **" + actual_page + "**.")
                         .withEphemeral(true);
             } else {
                 // --- Fetch from Scryfall ---
