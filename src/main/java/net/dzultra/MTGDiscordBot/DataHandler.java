@@ -28,7 +28,7 @@ public class DataHandler {
         boolean capitalizeNext = true;
 
         for (char c : name.toCharArray()) {
-            if (Character.isWhitespace(c)) {
+            if (Character.isWhitespace(c) || c == '-') {
                 capitalizeNext = true;
                 sb.append(c);
             } else if (capitalizeNext) {
